@@ -1,128 +1,62 @@
-// src/index.ts
-import { createModbusConnection } from "./modbus_tcp_service";
+import ModbusRTU from "modbus-serial"; // jsmodbus library
 import { Buffer } from "buffer";
 import { DeviceConfig, RegisterType, ModbusDataType } from "./types/modbus";
 
 const bessAcConfig: DeviceConfig = {
   name: "BESS",
   ip: "192.168.1.202",
-  port: 2,
+  port: 2,  // Modbus TCP default port
   unit_id: 1,
   registers: [
-    {
-      address: 1,
-      desc: "voltage_phase_r",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
-    {
-      address: 3,
-      desc: "voltage_phase_y",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
-    {
-      address: 5,
-      desc: "voltage_phase_b",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
-    {
-      address: 9,
-      desc: "voltage_ry",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
-    {
-      address: 11,
-      desc: "voltage_yb",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
-    {
-      address: 13,
-      desc: "voltage_br",
-      type: "input" as RegisterType,
-      data_type: "float" as ModbusDataType,
-      multiplier: 1,
-    },
+    { address: 1, desc: "voltage_phase_r", type: "input", data_type: "float", multiplier: 1 },
+    { address: 3, desc: "voltage_phase_y", type: "input", data_type: "float", multiplier: 1 },
+    { address: 5, desc: "voltage_phase_b", type: "input", data_type: "float", multiplier: 1 },
+    { address: 9, desc: "voltage_ry", type: "input", data_type: "float", multiplier: 1 },
+    { address: 11, desc: "voltage_yb", type: "input", data_type: "float", multiplier: 1 },
+    { address: 13, desc: "voltage_br", type: "input", data_type: "float", multiplier: 1 },
   ],
 };
 
 async function testBessAcVoltages() {
-  let connection: any = null;
+  const client = new ModbusRTU();
+  
   try {
-    connection = createModbusConnection(bessAcConfig);
-
-    // Add error handler for connection errors
-    connection.on("error", (err: Error) => {
-      console.error("Modbus connection error:", err.message);
-    });
-
-    console.log(
-      `Connecting to ${bessAcConfig.name} at ${bessAcConfig.ip}:${bessAcConfig.port}...`
-    );
-    await connection.connect();
+    console.log(`Connecting to ${bessAcConfig.name} at ${bessAcConfig.ip}:${bessAcConfig.port}...`);
+    await client.connectTCP(bessAcConfig.ip, { port: bessAcConfig.port });
+    client.setID(bessAcConfig.unit_id);
     console.log("Modbus connection established successfully!\n");
-
-    // Increased initial delay
-    await new Promise((resolve) => setTimeout(resolve, 500));
 
     for (const register of bessAcConfig.registers) {
       try {
-        // Read 2 registers for float values
-        const rawValues = await connection.readInputRegisters(
-          register.address - 1,
-          2
-        );
-
-        if (!rawValues || !Array.isArray(rawValues)) {
-          throw new Error(`Invalid response: ${JSON.stringify(rawValues)}`);
-        }
+        // Read 2 registers for float values (16-bit registers)
+        const rawValues = await client.readInputRegisters(register.address - 1, 2); // 0-based addressing
 
         console.log(`${register.desc} (Address: ${register.address}):`);
-        console.log(`  Raw Values:`, rawValues);
+        console.log(`  Raw Values:`, rawValues); // Log the full rawValues object
 
-        // Try all possible byte order combinations
-        const buffer = Buffer.alloc(4);
+        if (rawValues && rawValues.data) {
+          // Combine the two 16-bit registers into a 32-bit value (little-endian)
+          const combinedBuffer = Buffer.alloc(4);
+          combinedBuffer.writeUInt16LE(rawValues.data[0], 0);  // First 16-bit register (little-endian)
+          combinedBuffer.writeUInt16LE(rawValues.data[1], 2);  // Second 16-bit register (little-endian)
+          
+          // Convert the combined buffer to a float (Little Endian)
+          const voltage = combinedBuffer.readFloatLE(0);  // Use readFloatLE for Little Endian float
 
-        // Option 1: Big-endian
-        buffer.writeUInt16BE(rawValues[0], 0);
-        buffer.writeUInt16BE(rawValues[1], 2);
-        console.log(`  Option 1 (BE): ${buffer.readFloatBE(0).toFixed(2)} V`);
+          // Apply multiplier and log the result
+          const finalVoltage = voltage * register.multiplier;
+          console.log(`  Voltage: ${finalVoltage.toFixed(2)} V`);
+        } else {
+          console.error(`  Error: No data received from register ${register.address}`);
+        }
 
-        // Option 2: Word-swapped
-        buffer.writeUInt16BE(rawValues[1], 0);
-        buffer.writeUInt16BE(rawValues[0], 2);
-        console.log(`  Option 2 (SW): ${buffer.readFloatBE(0).toFixed(2)} V`);
-
-        // Increased delay between reads
+        // Small delay between reads
         await new Promise((resolve) => setTimeout(resolve, 300));
       } catch (error) {
         console.error(
           `❌ Failed to read ${register.desc}:`,
           error instanceof Error ? error.message : String(error)
         );
-
-        // Reset connection on error
-        if (connection) {
-          try {
-            await connection.close();
-            console.log("Reconnecting...");
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-            await connection.connect();
-          } catch (e) {
-            console.error(
-              "Reconnection failed:",
-              e instanceof Error ? e.message : String(e)
-            );
-          }
-        }
       }
     }
   } catch (error) {
@@ -131,16 +65,14 @@ async function testBessAcVoltages() {
       error instanceof Error ? error.message : String(error)
     );
   } finally {
-    if (connection?.close) {
-      try {
-        await connection.close();
-        console.log("\nConnection closed");
-      } catch (closeError) {
-        console.error(
-          "Error closing connection:",
-          closeError instanceof Error ? closeError.message : String(closeError)
-        );
-      }
+    try {
+      client.close();
+      console.log("\nConnection closed");
+    } catch (closeError) {
+      console.error(
+        "Error closing connection:",
+        closeError instanceof Error ? closeError.message : String(closeError)
+      );
     }
     console.log("Test completed");
   }
