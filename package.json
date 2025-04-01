@@ -1,0 +1,29 @@
+{
+  "name": "modbus_to_aws_iot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "ts-node src/index.ts",
+    "build": "tsc",
+    "run": "node dist/index.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "Maifooz Sheikh",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/aws-iot-device-sdk": "^2.2.8",
+    "@types/node": "^22.13.14",
+    "@types/sqlite3": "^3.1.11",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.8.2"
+  },
+  "dependencies": {
+    "aws-iot-device-sdk": "^2.2.15",
+    "dotenv": "^16.4.7",
+    "jsmodbus": "^4.0.10",
+    "net": "^1.0.2",
+    "sqlite3": "^5.1.7"
+  }
+}

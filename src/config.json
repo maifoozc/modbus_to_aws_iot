@@ -1,0 +1,388 @@
+{
+    "site_id": 3,
+    "components": {
+      "bess": {
+        "name": "Battery",
+        "ip": "192.168.1.10",
+        "port": 503,
+        "unit_id": 1,
+        "registers": [
+          {
+            "address": 4111,
+            "desc": "state_of_charge",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          },
+          {
+            "address": 4112,
+            "desc": "state_of_health",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          },
+          {
+            "address": 4109,
+            "desc": "dc_voltage",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          },
+          {
+            "address": 4110,
+            "desc": "dc_current",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          },
+          {
+            "address": 4123,
+            "desc": "max_cell_voltage",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.001
+          },
+          {
+            "address": 4127,
+            "desc": "min_cell_voltage",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.001
+          },
+          {
+            "address": 4132,
+            "desc": "max_cell_temp",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          },
+          {
+            "address": 4136,
+            "desc": "min_cell_temp",
+            "type": "holding",
+            "data_type": "int16",
+            "multiplier": 0.1
+          }
+        ]
+      },
+      "bess_ac": {
+        "name": "BESS",
+        "ip": "192.168.1.210",
+        "port": 10,
+        "unit_id": 1,
+        "registers": [
+          {
+            "address": 100,
+            "desc": "voltage_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 102,
+            "desc": "voltage_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 104,
+            "desc": "voltage_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 108,
+            "desc": "voltage_ry",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 110,
+            "desc": "voltage_yb",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 112,
+            "desc": "voltage_br",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 114,
+            "desc": "current_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 116,
+            "desc": "current_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 118,
+            "desc": "current_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 134,
+            "desc": "power_factor_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 136,
+            "desc": "power_factor_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 138,
+            "desc": "power_factor_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 224,
+            "desc": "total_export",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 226,
+            "desc": "total_reactive",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          }
+        ]
+      },
+      "load": {
+        "name": "Load",
+        "ip": "192.168.1.210",
+        "port": 10,
+        "unit_id": 2,
+        "registers": [
+          {
+            "address": 100,
+            "desc": "voltage_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 102,
+            "desc": "voltage_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 104,
+            "desc": "voltage_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 108,
+            "desc": "voltage_ry",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 110,
+            "desc": "voltage_yb",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 112,
+            "desc": "voltage_br",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 114,
+            "desc": "current_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 116,
+            "desc": "current_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 118,
+            "desc": "current_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 134,
+            "desc": "power_factor_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 136,
+            "desc": "power_factor_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 138,
+            "desc": "power_factor_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 224,
+            "desc": "total_export",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 226,
+            "desc": "total_reactive",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          }
+        ]
+      },
+      "solar": {
+        "name": "Solar",
+        "ip": "192.168.1.210",
+        "port": 10,
+        "unit_id": 3,
+        "registers": [
+          {
+            "address": 100,
+            "desc": "voltage_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 102,
+            "desc": "voltage_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 104,
+            "desc": "voltage_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 108,
+            "desc": "voltage_ry",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 110,
+            "desc": "voltage_yb",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 112,
+            "desc": "voltage_br",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 114,
+            "desc": "current_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 116,
+            "desc": "current_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 118,
+            "desc": "current_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 134,
+            "desc": "power_factor_phase_r",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 136,
+            "desc": "power_factor_phase_y",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 138,
+            "desc": "power_factor_phase_b",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 224,
+            "desc": "total_export",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          },
+          {
+            "address": 226,
+            "desc": "total_reactive",
+            "type": "holding",
+            "data_type": "float",
+            "multiplier": 1
+          }
+        ]
+      }
+    }
+  }
+  
