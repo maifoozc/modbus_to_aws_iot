@@ -25,3 +25,9 @@ export interface AppConfig {
     [key: string]: DeviceConfig;
   };
 }
+
+export interface ModbusConnection {
+  connect(): Promise<void>;
+  readRegister(register: ModbusRegister): Promise<number[]>;
+  close(): Promise<void>;
+}
