@@ -25,5 +25,13 @@
     "jsmodbus": "^4.0.10",
     "net": "^1.0.2",
     "sqlite3": "^5.1.7"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/maifoozc/modbus_to_aws_iot.git"
+  },
+  "bugs": {
+    "url": "https://github.com/maifoozc/modbus_to_aws_iot/issues"
+  },
+  "homepage": "https://github.com/maifoozc/modbus_to_aws_iot#readme"
 }
