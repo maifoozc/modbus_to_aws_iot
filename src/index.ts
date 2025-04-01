@@ -1,27 +1,48 @@
 // src/index.ts
 import { createModbusConnection } from "./modbus_tcp_service";
 import rawConfig from "./config.json";
-
-import dotenv from "dotenv";
-import { assertConfig } from "./config-validator";
 import { AppConfig } from "./types/modbus";
+import dotenv from "dotenv";
 
 dotenv.config();
 
-// Validate and type-assert the config
-assertConfig(rawConfig);
+// Type assertion for config
 const config = rawConfig as AppConfig;
 
-async function main() {
+async function readModbusData() {
   try {
-    // Now TypeScript knows config.components.bess is properly typed
-    const connection = createModbusConnection(config.components.bess);
-    await connection.connect();
+    // 1. Connect to the BESS device
+    const bessConfig = config.components.bess;
+    const connection = createModbusConnection(bessConfig);
 
-    // Rest of your code...
+    console.log(
+      `Connecting to ${bessConfig.name} at ${bessConfig.ip}:${bessConfig.port}...`
+    );
+    await connection.connect();
+    console.log("Modbus connection established successfully!");
+
+    // 2. Read and display all registers
+    console.log("\nReading register data:");
+    console.log("----------------------");
+
+    for (const register of bessConfig.registers) {
+      try {
+        const rawValue = await connection.readRegister(register);
+        const scaledValue = rawValue * register.multiplier;
+
+        console.log(
+          `${register.desc.padEnd(20)}: ` +
+            `Raw: ${rawValue.toString().padStart(6)} | ` +
+            `Scaled: ${scaledValue.toFixed(4).padStart(8)} ` +
+            `(Addr: ${register.address}, Type: ${register.type})`
+        );
+      } catch (error) {
+        console.error(`Failed to read ${register.desc}:`, error);
+      }
+    }
   } catch (error) {
-    console.error("Application error:", error);
+    console.error("Modbus operation failed:", error);
   }
 }
 
-main();
+readModbusData();

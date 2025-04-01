@@ -67,49 +67,49 @@
       },
       "bess_ac": {
         "name": "BESS",
-        "ip": "192.168.1.210",
-        "port": 10,
+        "ip": "192.168.1.202",
+        "port": 2,
         "unit_id": 1,
         "registers": [
           {
-            "address": 100,
+            "address": 1,
             "desc": "voltage_phase_r",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },
           {
-            "address": 102,
+            "address": 3,
             "desc": "voltage_phase_y",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },
           {
-            "address": 104,
+            "address": 5,
             "desc": "voltage_phase_b",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },
           {
-            "address": 108,
+            "address": 9,
             "desc": "voltage_ry",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },
           {
-            "address": 110,
+            "address": 11,
             "desc": "voltage_yb",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },
           {
-            "address": 112,
+            "address": 13,
             "desc": "voltage_br",
-            "type": "holding",
+            "type": "input",
             "data_type": "float",
             "multiplier": 1
           },

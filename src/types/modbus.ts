@@ -5,7 +5,7 @@ export type RegisterType = "holding" | "input";
 export interface ModbusRegister {
   address: number;
   desc: string;
-  type: RegisterType;  // Changed to use the type alias
+  type: RegisterType; // Changed to use the type alias
   data_type: ModbusDataType;
   multiplier: number;
 }
@@ -20,7 +20,7 @@ export interface DeviceConfig {
 
 export interface AppConfig {
   site_id: number;
-  poll_interval: number;
+  poll_interval?: number;
   components: {
     [key: string]: DeviceConfig;
   };
