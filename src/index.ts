@@ -32,84 +32,103 @@ const iotDevice = new iot.device({
   reconnectPeriod: 5000,
 });
 
+// Persistent connection holders
+const modbusClient = new ModbusRTU();
+let isModbusConnected = false;
+
+async function initializeConnections() {
+  // Initialize AWS IoT connection
+  iotDevice
+    .on("connect", async () => {
+      console.log("✅ Connected to AWS IoT");
+      await initializeModbusConnection();
+      startPolling();
+    })
+    .on("error", (err) => console.error("AWS IoT Error:", err))
+    .on("offline", () => console.log("AWS IoT Offline"));
+}
+
+async function initializeModbusConnection() {
+  if (!isModbusConnected) {
+    console.log(`Connecting to ${bessAcConfig.name} at ${bessAcConfig.ip}:${bessAcConfig.port}...`);
+    await modbusClient.connectTCP(bessAcConfig.ip, { port: bessAcConfig.port });
+    modbusClient.setID(bessAcConfig.unit_id);
+    isModbusConnected = true;
+    console.log("Modbus connection established and will be reused!");
+  }
+}
+
+function startPolling() {
+  // Initial poll
+  collectAndPublishData();
+
+  // Scheduled polls
+  setInterval(() => {
+    if (isModbusConnected) {
+      collectAndPublishData();
+    } else {
+      console.log("Skipping poll - Modbus disconnected");
+      initializeModbusConnection();
+    }
+  }, 10000);
+}
+
 async function collectAndPublishData() {
-  const client = new ModbusRTU();
   const timestamp = new Date().toISOString();
-  const readings: Record<string, number> = {};
+  const readings: Record<string, number | null> = {};
 
   try {
-    // Connect to Modbus device
-    console.log(`Connecting to ${bessAcConfig.name} at ${bessAcConfig.ip}:${bessAcConfig.port}...`);
-    await client.connectTCP(bessAcConfig.ip, { port: bessAcConfig.port });
-    client.setID(bessAcConfig.unit_id);
-    console.log("Modbus connection established!");
+    if (!isModbusConnected) {
+      await initializeModbusConnection();
+    }
 
     // Collect all register data
     for (const register of bessAcConfig.registers) {
       try {
-        const rawValues = await client.readInputRegisters(register.address - 1, 2);
-        
+        const rawValues = await modbusClient.readInputRegisters(register.address - 1, 2);
+
         if (rawValues?.data?.length >= 2) {
           const buffer = Buffer.alloc(4);
           buffer.writeUInt16LE(rawValues.data[0], 0);
           buffer.writeUInt16LE(rawValues.data[1], 2);
           const voltage = buffer.readFloatLE(0) * register.multiplier;
           readings[register.desc] = parseFloat(voltage.toFixed(2));
+        } else {
+          readings[register.desc] = null;
         }
         await new Promise(resolve => setTimeout(resolve, 300));
       } catch (error) {
-        console.error(`❌ Error reading ${register.desc}:`)
-     
+        console.error(`❌ Error reading ${register.desc}:`, error);
+        readings[register.desc] = null;
+        isModbusConnected = false;
       }
     }
 
-    // Prepare and publish consolidated payload
+    // Prepare and publish payload
     const payload = {
       device: bessAcConfig.name,
       timestamp,
       readings,
-      status: Object.values(readings).every(val => val !== null) ? "healthy" : "partial",
-      new:"new"
+      status: Object.values(readings).every(val => val !== null) ? "healthy" : "partial", new: "new"
     };
 
-    iotDevice.publish("sula_parameters", JSON.stringify(payload), { qos: 1 }, (err) => {
-      if (err) {
-        console.error("❌ Publish failed:", err);
-      } else {
-        console.log("📤 Published all readings:", 
-          Object.keys(readings).length, "values");
-        console.log("Sample values:", 
-          Object.entries(readings).slice(0, 2).map(([k,v]) => `${k}:${v}V`));
-      }
-    });
-
+    iotDevice.publish("sula_parameters", JSON.stringify(payload), { qos: 1 });
+    console.log("payload is published: ", payload)
   } catch (error) {
-    console.error("❌ Modbus operation failed:", 
-      error instanceof Error ? error.message : String(error));
-  } finally {
-    try {
-      await client.close();
-      console.log("Modbus connection closed");
-    } catch (closeError) {
-      console.error("Error closing connection:", 
-        closeError instanceof Error ? closeError.message : String(closeError));
-    }
+    console.error("❌ Data collection failed:", error);
+    isModbusConnected = false;
   }
 }
 
-// Event Handlers
-iotDevice
-  .on("connect", () => {
-    console.log("✅ Connected to AWS IoT");
-    setInterval(collectAndPublishData, 5000); // Poll every 5 seconds
-    collectAndPublishData(); // Immediate first poll
-  })
-  .on("error", (err) => console.error("AWS IoT Error:", err))
-  .on("offline", () => console.log("AWS IoT Offline"));
-
-// Graceful Shutdown
+// Handle graceful shutdown
 process.on("SIGINT", async () => {
   console.log("\nShutting down gracefully...");
+  if (isModbusConnected) {
+    await modbusClient.close();
+  }
   iotDevice.end();
   process.exit(0);
 });
+
+// Start the application
+initializeConnections();
