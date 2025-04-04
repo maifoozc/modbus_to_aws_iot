@@ -9,9 +9,6 @@
         "iot:PublishRetain"
       ],
       "Resource": [
-        "arn:aws:iot:ap-south-1:850995575173:topic/sdk/test/java",
-        "arn:aws:iot:ap-south-1:850995575173:topic/sdk/test/python",
-        "arn:aws:iot:ap-south-1:850995575173:topic/sdk/test/js",
         "arn:aws:iot:ap-south-1:850995575173:topic/sula_parameters"
       ]
     },
