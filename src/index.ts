@@ -4,11 +4,10 @@ import { DeviceConfig } from "./types/modbus";
 import * as iot from "aws-iot-device-sdk";
 import * as path from "path";
 
-// Modbus Configuration
 const bessAcConfig: DeviceConfig = {
   name: "BESS-AC",
   ip: "192.168.1.202",
-  port: 2, // Changed to standard Modbus TCP port 502
+  port: 2,
   unit_id: 1,
   registers: [
     { address: 1, desc: "voltage_phase_r", type: "input", data_type: "float", multiplier: 1 },
@@ -17,10 +16,15 @@ const bessAcConfig: DeviceConfig = {
     { address: 9, desc: "voltage_ry", type: "input", data_type: "float", multiplier: 1 },
     { address: 11, desc: "voltage_yb", type: "input", data_type: "float", multiplier: 1 },
     { address: 13, desc: "voltage_br", type: "input", data_type: "float", multiplier: 1 },
+    { address: 17, desc: "current_phase_r", type: "input", data_type: "float", multiplier: 1 },
+    { address: 19, desc: "current_phase_y", type: "input", data_type: "float", multiplier: 1 },
+    { address: 21, desc: "current_phase_b", type: "input", data_type: "float", multiplier: 1 },
+    { address: 49, desc: "power_factor_phase_r", type: "input", data_type: "float", multiplier: 1 },
+    { address: 51, desc: "power_factor_phase_y", type: "input", data_type: "float", multiplier: 1 },
+    { address: 53, desc: "power_factor_phase_b", type: "input", data_type: "float", multiplier: 1 },
   ],
 };
 
-// AWS IoT Configuration
 const iotDevice = new iot.device({
   keyPath: path.resolve(__dirname, "./assets/SULA_site.private.key"),
   certPath: path.resolve(__dirname, "./assets/SULA_site.cert.pem"),
@@ -32,12 +36,10 @@ const iotDevice = new iot.device({
   reconnectPeriod: 5000,
 });
 
-// Persistent connection holders
 const modbusClient = new ModbusRTU();
 let isModbusConnected = false;
 
 async function initializeConnections() {
-  // Initialize AWS IoT connection
   iotDevice
     .on("connect", async () => {
       console.log("✅ Connected to AWS IoT");
@@ -59,10 +61,8 @@ async function initializeModbusConnection() {
 }
 
 function startPolling() {
-  // Initial poll
   collectAndPublishData();
 
-  // Scheduled polls
   setInterval(() => {
     if (isModbusConnected) {
       collectAndPublishData();
@@ -82,7 +82,6 @@ async function collectAndPublishData() {
       await initializeModbusConnection();
     }
 
-    // Collect all register data
     for (const register of bessAcConfig.registers) {
       try {
         const rawValues = await modbusClient.readInputRegisters(register.address - 1, 2);
