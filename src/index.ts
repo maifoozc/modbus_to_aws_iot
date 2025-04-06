@@ -50,7 +50,7 @@ const devices: DeviceConfig[] = [
 
 const componentMap: Record<string, { key: string; name: string }> = {
   "BESS": { key: "bess", name: "Battery" },
-  "BESS-AC": { key: "bess_ac", name: "BESS" }
+  "BESS-AC": { key: "bess_ac", name: "BESS AC" }
 };
 
 // ====================
