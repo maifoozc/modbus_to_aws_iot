@@ -123,7 +123,7 @@ function processRegisterData(data: number[], reg: DeviceConfig["registers"][0]):
 
 async function pollDevice(device: DeviceConfig): Promise<any> {
   const modbusClient = new ModbusRTU();
-  const metrics: Record<string, number | null> = {};
+  const metrics: Record<string, number> = {}; // Changed to only store numbers
 
   try {
     console.log(`Connecting to ${device.name} at ${device.ip}:${device.port}...`);
@@ -131,35 +131,36 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
     modbusClient.setID(device.unit_id);
 
     for (const reg of device.registers) {
-      // Validate address
+      // Validate address before reading
       if (reg.address < 1 || reg.address > 65535) {
         console.error(`Invalid address ${reg.address} for ${reg.desc}`);
-        metrics[reg.desc] = null;
-        continue;
+        continue; // Skip invalid addresses
       }
 
       try {
-        // Choose read method based on register type
         const registerCount = getRegisterCount(reg.data_type);
         const raw = reg.type === "input"
           ? await modbusClient.readInputRegisters(reg.address - 1, registerCount)
           : await modbusClient.readHoldingRegisters(reg.address - 1, registerCount);
 
+        // Validate response structure
         if (!raw?.data || raw.data.length < registerCount) {
-          metrics[reg.desc] = null;
+          console.warn(`Incomplete data for ${reg.desc}`);
           continue;
         }
 
-        metrics[reg.desc] = processRegisterData(raw.data, reg);
+        // Process and validate value
+        const processedValue = processRegisterData(raw.data, reg);
+        if (processedValue !== null && !isNaN(processedValue)) {
+          metrics[reg.desc] = processedValue;
+        }
       } catch (err) {
-        console.error(`Read error for ${reg.desc} on ${device.name}:`, err);
-        metrics[reg.desc] = null;
+        console.error(`Read error for ${reg.desc}:`, err);
       }
-
       await delay(REGISTER_READ_DELAY);
     }
   } catch (error) {
-    console.error(`Error polling ${device.name}:`, error);
+    console.error(`Device polling failed:`, error);
     return null;
   } finally {
     try {
@@ -169,6 +170,9 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
     }
   }
 
+  // Only return device data if we have valid metrics
+  if (Object.keys(metrics).length === 0) return null;
+  
   const map = componentMap[device.name] || { key: device.name.toLowerCase(), name: device.name };
   return { key: map.key, name: map.name, metrics };
 }
