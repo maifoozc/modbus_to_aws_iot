@@ -27,7 +27,9 @@ const devices: DeviceConfig[] = [
       { address: 21, desc: "current_phase_b", type: "input", data_type: "float", multiplier: 1 },
       { address: 49, desc: "power_factor_phase_r", type: "input", data_type: "float", multiplier: 1 },
       { address: 51, desc: "power_factor_phase_y", type: "input", data_type: "float", multiplier: 1 },
-      { address: 53, desc: "power_factor_phase_b", type: "input", data_type: "float", multiplier: 1 }
+      { address: 53, desc: "power_factor_phase_b", type: "input", data_type: "float", multiplier: 1 },
+      { address: 59, desc: "total_import", type: "input", data_type: "float", multiplier: 1 },
+      { address: 75, desc: "total_export", type: "input", data_type: "float", multiplier: 1 }
     ]
   },
   {
