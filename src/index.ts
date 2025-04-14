@@ -3,7 +3,8 @@ import { Buffer } from "buffer";
 import { DeviceConfig, ModbusDataType } from "./types/modbus";
 import * as iot from "aws-iot-device-sdk";
 import path from "path";
-import fs from "fs";
+import sqlite3 from "sqlite3";
+import { open, Database } from "sqlite";
 
 // ====================
 // Device & Component Configuration
@@ -16,21 +17,105 @@ const devices: DeviceConfig[] = [
     port: 2,
     unit_id: 1,
     registers: [
-      { address: 1, desc: "voltage_phase_r", type: "input", data_type: "float", multiplier: 1 },
-      { address: 3, desc: "voltage_phase_y", type: "input", data_type: "float", multiplier: 1 },
-      { address: 5, desc: "voltage_phase_b", type: "input", data_type: "float", multiplier: 1 },
-      { address: 9, desc: "voltage_ry", type: "input", data_type: "float", multiplier: 1 },
-      { address: 11, desc: "voltage_yb", type: "input", data_type: "float", multiplier: 1 },
-      { address: 13, desc: "voltage_br", type: "input", data_type: "float", multiplier: 1 },
-      { address: 17, desc: "current_phase_r", type: "input", data_type: "float", multiplier: 1 },
-      { address: 19, desc: "current_phase_y", type: "input", data_type: "float", multiplier: 1 },
-      { address: 21, desc: "current_phase_b", type: "input", data_type: "float", multiplier: 1 },
-      { address: 49, desc: "power_factor_phase_r", type: "input", data_type: "float", multiplier: 1 },
-      { address: 51, desc: "power_factor_phase_y", type: "input", data_type: "float", multiplier: 1 },
-      { address: 53, desc: "power_factor_phase_b", type: "input", data_type: "float", multiplier: 1 },
-      { address: 59, desc: "total_import", type: "input", data_type: "float", multiplier: 1 },
-      { address: 75, desc: "total_export", type: "input", data_type: "float", multiplier: 1 }
-    ]
+      {
+        address: 1,
+        desc: "voltage_phase_r",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 3,
+        desc: "voltage_phase_y",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 5,
+        desc: "voltage_phase_b",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 9,
+        desc: "voltage_ry",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 11,
+        desc: "voltage_yb",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 13,
+        desc: "voltage_br",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 17,
+        desc: "current_phase_r",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 19,
+        desc: "current_phase_y",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 21,
+        desc: "current_phase_b",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 49,
+        desc: "power_factor_phase_r",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 51,
+        desc: "power_factor_phase_y",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 53,
+        desc: "power_factor_phase_b",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 59,
+        desc: "total_import",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 75,
+        desc: "total_export",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+    ],
   },
   {
     name: "BESS",
@@ -38,21 +123,91 @@ const devices: DeviceConfig[] = [
     port: 502,
     unit_id: 1,
     registers: [
-      { address: 51, desc: "dc_voltage", type: "input", data_type: "float", multiplier: 1 },
-      { address: 53, desc: "dc_current", type: "input", data_type: "float", multiplier: 1 },
-      { address: 55, desc: "state_of_charge", type: "input", data_type: "float", multiplier: 1 },
-      { address: 57, desc: "state_of_health", type: "input", data_type: "float", multiplier: 1 },
-      { address: 73, desc: "max_cell_voltage", type: "input", data_type: "float", multiplier: 1 },
-      { address: 75, desc: "min_cell_voltage", type: "input", data_type: "float", multiplier: 1 },
-      { address: 79, desc: "max_cell_temp", type: "input", data_type: "float", multiplier: 1 },
-      { address: 81, desc: "min_cell_temp", type: "input", data_type: "float", multiplier: 1 }
-    ]
-  }
+      {
+        address: 51,
+        desc: "dc_voltage",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 53,
+        desc: "dc_current",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 55,
+        desc: "state_of_charge",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 57,
+        desc: "state_of_health",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 73,
+        desc: "max_cell_voltage",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 75,
+        desc: "min_cell_voltage",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 79,
+        desc: "max_cell_temp",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+      {
+        address: 81,
+        desc: "min_cell_temp",
+        type: "input",
+        data_type: "float",
+        multiplier: 1,
+      },
+    ],
+  },
 ];
 
 const componentMap: Record<string, { key: string; name: string }> = {
-  "BESS": { key: "bess", name: "Battery" },
-  "BESS-AC": { key: "bess_ac", name: "BESS AC" }
+  BESS: { key: "bess", name: "Battery" },
+  "BESS-AC": { key: "bess_ac", name: "BESS AC" },
+};
+
+// ====================
+// Database Setup
+// ====================
+const initializeDatabase = async (): Promise<Database> => {
+  const db = await open({
+    filename: "./offline_data.db",
+    driver: sqlite3.Database,
+  });
+
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS payloads (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      timestamp TEXT NOT NULL,
+      data TEXT NOT NULL,
+      retries INTEGER DEFAULT 0,
+      last_attempt TEXT
+    )
+  `);
+
+  return db;
 };
 
 // ====================
@@ -70,23 +225,25 @@ const iotDevice = new iot.device({
   reconnectPeriod: 5000,
 });
 
-// Global connection flag
-let isConnected = false;
-
 // ====================
 // Constants
 // ====================
 
-const POLL_INTERVAL = 10_000; // 10 seconds
-const REGISTER_READ_DELAY = 300; // 300 ms delay between register reads
-const OFFLINE_DATA_FILE = path.resolve(__dirname, "./offline_data.json");
+const constants = {
+  POLL_INTERVAL: 10_000,
+  REGISTER_READ_DELAY: 300,
+  MAX_RETRIES: 5,
+  RETRY_BASE_DELAY: 1000,
+  DATA_RETENTION_DAYS: 7,
+};
 
+let isConnected = false;
 // ====================
 // Helper Functions
 // ====================
 
 // Simple delay function
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 // Determine register count based on data type (e.g., float needs 2 registers)
 function getRegisterCount(dataType: ModbusDataType): number {
@@ -94,7 +251,10 @@ function getRegisterCount(dataType: ModbusDataType): number {
 }
 
 // Process register data using type and multiplier
-function processRegisterData(data: number[], reg: DeviceConfig["registers"][0]): number | null {
+function processRegisterData(
+  data: number[],
+  reg: DeviceConfig["registers"][0]
+): number | null {
   try {
     let value: number;
     if (reg.data_type === "float") {
@@ -119,6 +279,29 @@ function processRegisterData(data: number[], reg: DeviceConfig["registers"][0]):
   }
 }
 
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T | null> {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        console.error(`❌ Failed after ${maxRetries} attempts:`, err);
+        break;
+      }
+      const delayTime = baseDelay * Math.pow(2, attempt); // exponential backoff
+      console.warn(`🔁 Retry ${attempt}/${maxRetries} in ${delayTime}ms`);
+      await delay(delayTime);
+    }
+  }
+  return null;
+}
+
 // ====================
 // Modbus Polling & Payload Creation
 // ====================
@@ -128,7 +311,9 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
   const metrics: Record<string, number> = {}; // Changed to only store numbers
 
   try {
-    console.log(`Connecting to ${device.name} at ${device.ip}:${device.port}...`);
+    console.log(
+      `Connecting to ${device.name} at ${device.ip}:${device.port}...`
+    );
     await modbusClient.connectTCP(device.ip, { port: device.port });
     modbusClient.setID(device.unit_id);
 
@@ -141,9 +326,12 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
 
       try {
         const registerCount = getRegisterCount(reg.data_type);
-        const raw = reg.type === "input"
-          ? await modbusClient.readInputRegisters(reg.address - 1, registerCount)
-          : await modbusClient.readHoldingRegisters(reg.address - 1, registerCount);
+        const raw = await withRetry(() => {
+          return reg.type === "input"
+            ? modbusClient.readInputRegisters(reg.address - 1, registerCount)
+            : modbusClient.readHoldingRegisters(reg.address - 1, registerCount);
+        }, constants.MAX_RETRIES, constants.RETRY_BASE_DELAY);
+        
 
         // Validate response structure
         if (!raw?.data || raw.data.length < registerCount) {
@@ -159,7 +347,7 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
       } catch (err) {
         console.error(`Read error for ${reg.desc}:`, err);
       }
-      await delay(REGISTER_READ_DELAY);
+      await delay(constants.REGISTER_READ_DELAY);
     }
   } catch (error) {
     console.error(`Device polling failed:`, error);
@@ -174,8 +362,11 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
 
   // Only return device data if we have valid metrics
   if (Object.keys(metrics).length === 0) return null;
-  
-  const map = componentMap[device.name] || { key: device.name.toLowerCase(), name: device.name };
+
+  const map = componentMap[device.name] || {
+    key: device.name.toLowerCase(),
+    name: device.name,
+  };
   return { key: map.key, name: map.name, metrics };
 }
 
@@ -193,7 +384,7 @@ async function createPayload() {
   const payload = {
     timestamp: payloadTimestamp,
     site_id: 3,
-    components
+    components,
   };
 
   console.log("✅ Payload created:", JSON.stringify(payload, null, 2));
@@ -201,116 +392,176 @@ async function createPayload() {
 }
 
 // ====================
-// AWS IoT Publishing
+// IoT Functions
 // ====================
-
-function publishToIoT(payload: any): Promise<boolean> {
+const publishToIoT = (payload: any): Promise<boolean> => {
   return new Promise((resolve) => {
-    const topic = "sula_parameters"; // Change topic if needed
-    const message = JSON.stringify(payload);
-
-    iotDevice.publish(topic, message, {}, (err) => {
+    iotDevice.publish("sula_parameters", JSON.stringify(payload), {}, (err) => {
       if (err) {
-        console.error("❌ Failed to publish to AWS IoT:", err);
+        console.error("❌ Publish failed:", err);
         return resolve(false);
       }
-      console.log("📡 Payload published to AWS IoT successfully.");
+      console.log("📡 Payload published successfully");
       resolve(true);
     });
   });
-}
+};
 
-// Retry sending offline data from file
-async function retryOfflineData() {
-  if (!fs.existsSync(OFFLINE_DATA_FILE)) return;
+// ====================
+// Offline Handling
+// ====================
+
+const savePayloadOffline = async (
+  db: Database,
+  payload: any
+): Promise<void> => {
+  if (!isValidPayload(payload)) {
+    console.warn("Invalid payload, skipping save");
+    return;
+  }
+
   try {
-    const offlineData = JSON.parse(fs.readFileSync(OFFLINE_DATA_FILE, "utf8"));
-    const successful: any[] = [];
-    
-    for (const payload of offlineData) {
-      if (await publishToIoT(payload)) {
-        successful.push(payload);
+    await db.run("INSERT INTO payloads (timestamp, data) VALUES (?, ?)", [
+      new Date().toISOString(),
+      JSON.stringify(payload),
+    ]);
+    console.log("💾 Saved payload to offline storage");
+  } catch (error) {
+    console.error("Failed to save payload:", error);
+  }
+};
+
+const retryOfflineData = async (db: Database): Promise<void> => {
+  try {
+    const batch = await db.all(
+      `SELECT * FROM payloads 
+       WHERE retries < ? 
+       ORDER BY timestamp ASC 
+       LIMIT 100`,
+      [constants.MAX_RETRIES]
+    );
+
+    for (const record of batch) {
+      try {
+        const payload = JSON.parse(record.data);
+        const success = await publishToIoT(payload);
+
+        if (success) {
+          await db.run("DELETE FROM payloads WHERE id = ?", [record.id]);
+        } else {
+          const newRetries = record.retries + 1;
+          const delay = constants.RETRY_BASE_DELAY * Math.pow(2, newRetries);
+
+          await db.run(
+            "UPDATE payloads SET retries = ?, last_attempt = ? WHERE id = ?",
+            [newRetries, new Date().toISOString(), record.id]
+          );
+
+          await new Promise((resolve) => setTimeout(resolve, delay));
+        }
+      } catch (err) {
+        console.error("Retry failed:", err);
+        await db.run("UPDATE payloads SET retries = retries + 1 WHERE id = ?", [
+          record.id,
+        ]);
       }
     }
-    
-    const remaining = offlineData.filter((p: any) => !successful.includes(p));
-    fs.writeFileSync(OFFLINE_DATA_FILE, JSON.stringify(remaining, null, 2));
-    if (remaining.length === 0) {
-      console.log("✅ All offline payloads published; offline storage cleared.");
-    }
-  } catch (e) {
-    console.error("Offline data retry failed:", e);
+  } catch (error) {
+    console.error("Batch retry failed:", error);
   }
-}
-
-// Save payload locally if IoT publish fails
-function savePayloadOffline(payload: any) {
-  let existingData: any[] = [];
-  if (fs.existsSync(OFFLINE_DATA_FILE)) {
-    const raw = fs.readFileSync(OFFLINE_DATA_FILE, "utf8");
-    try {
-      existingData = JSON.parse(raw);
-    } catch (e) {
-      console.error("⚠️ Failed to parse offline data file, starting fresh.");
-    }
-  }
-  existingData.push(payload);
-  fs.writeFileSync(OFFLINE_DATA_FILE, JSON.stringify(existingData, null, 2));
-  console.log("💾 Payload saved locally due to IoT disconnect.");
-}
+};
 
 // ====================
-// Polling Controller
+// Data Management
 // ====================
+const cleanupOldData = async (db: Database): Promise<void> => {
+  try {
+    const retentionDate = new Date();
+    retentionDate.setDate(
+      retentionDate.getDate() - constants.DATA_RETENTION_DAYS
+    );
 
-function startPolling() {
+    await db.run("DELETE FROM payloads WHERE timestamp < ?", [
+      retentionDate.toISOString(),
+    ]);
+    console.log("🧹 Cleaned up old data");
+  } catch (error) {
+    console.error("Data cleanup failed:", error);
+  }
+};
+
+const isValidPayload = (payload: any): boolean => {
+  return (
+    !!payload?.components &&
+    Object.keys(payload.components).length > 0 &&
+    !isNaN(Date.parse(payload.timestamp))
+  );
+};
+
+// ====================
+// Application Setup
+// ====================
+const startPolling = (db: Database) => {
   setInterval(async () => {
     try {
       const payload = await createPayload();
+
       if (isConnected) {
-        const published = await publishToIoT(payload);
-        if (!published) {
-          savePayloadOffline(payload);
+        try {
+          const published = await publishToIoT(payload);
+          if (!published) await savePayloadOffline(db, payload);
+        } catch (publishError) {
+          console.error("Publish error:", publishError);
+          await savePayloadOffline(db, payload);
         }
       } else {
-        console.warn("⚠️ Not connected to AWS IoT, saving payload offline.");
-        savePayloadOffline(payload);
+        console.warn("⚠️ Offline mode - saving locally");
+        await savePayloadOffline(db, payload);
       }
     } catch (e) {
-      console.error("Polling cycle error:", e);
+      console.error("Polling error:", e);
     }
-  }, POLL_INTERVAL);
-}
+  }, constants.POLL_INTERVAL);
+};
 
 // ====================
-// AWS IoT Event Handlers
+// Main Application
 // ====================
+const main = async () => {
+  try {
+    const db = await initializeDatabase();
 
-iotDevice
-  .on("connect", () => {
-    console.log("🔌 Connected to AWS IoT.");
-    isConnected = true;
-    retryOfflineData();
-  })
-  .on("close", () => {
-    console.warn("🔌 Disconnected from AWS IoT.");
-    isConnected = false;
-  });
+    // Setup cleanup job
+    setInterval(() => cleanupOldData(db), 24 * 60 * 60 * 1000);
 
-// ====================
-// Application Initialization
-// ====================
+    // Setup IoT handlers
+    iotDevice
+      .on("connect", async () => {
+        console.log("🔌 Connected to AWS IoT");
+        isConnected = true;
+        await retryOfflineData(db);
+      })
+      .on("close", () => {
+        console.warn("🔌 Disconnected from AWS IoT");
+        isConnected = false;
+      });
 
-function main() {
-  console.log("⏳ Data polling started.");
-  startPolling();
+    // Start polling
+    console.log("⏳ Starting data polling");
+    startPolling(db);
 
-  // Graceful shutdown
-  process.on("SIGINT", () => {
-    console.log("\nShutting down gracefully...");
-    iotDevice.end();
-    process.exit();
-  });
-}
+    // Graceful shutdown
+    process.on("SIGINT", async () => {
+      console.log("\n🛑 Shutting down gracefully...");
+      iotDevice.end();
+      await db.close();
+      process.exit();
+    });
+  } catch (error) {
+    console.error("⚠️ Application failed to initialize:", error);
+    process.exit(1);
+  }
+};
 
+// Start the application
 main();
