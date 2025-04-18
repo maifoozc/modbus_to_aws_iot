@@ -295,6 +295,29 @@ function processRegisterData(
   }
 }
 
+async function withRetry<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  baseDelay = 1000
+): Promise<T | null> {
+  let attempt = 0;
+  while (attempt < maxRetries) {
+    try {
+      return await fn();
+    } catch (err) {
+      attempt++;
+      if (attempt >= maxRetries) {
+        console.error(`❌ Failed after ${maxRetries} attempts:`, err);
+        break;
+      }
+      const delayTime = baseDelay * Math.pow(2, attempt); // exponential backoff
+      console.warn(`🔁 Retry ${attempt}/${maxRetries} in ${delayTime}ms`);
+      await delay(delayTime);
+    }
+  }
+  return null;
+}
+
 // ====================
 // Modbus Polling & Payload Creation
 // ====================
@@ -319,16 +342,12 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
 
       try {
         const registerCount = getRegisterCount(reg.data_type);
-        const raw =
-          reg.type === "input"
-            ? await modbusClient.readInputRegisters(
-                reg.address - 1,
-                registerCount
-              )
-            : await modbusClient.readHoldingRegisters(
-                reg.address - 1,
-                registerCount
-              );
+        const raw = await withRetry(() => {
+          return reg.type === "input"
+            ? modbusClient.readInputRegisters(reg.address - 1, registerCount)
+            : modbusClient.readHoldingRegisters(reg.address - 1, registerCount);
+        }, constants.MAX_RETRIES, constants.RETRY_BASE_DELAY);
+        
 
         // Validate response structure
         if (!raw?.data || raw.data.length < registerCount) {
