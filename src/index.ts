@@ -118,6 +118,21 @@ const devices: DeviceConfig[] = [
     ],
   },
   {
+    name: "BESS-AUX",
+    ip: "192.168.1.203",
+    port: 3,
+    unit_id: 1,
+    registers: [
+      {
+        address: 88,
+        desc: "auxillary_power",
+        type: "input",
+        data_type: "float",
+        multiplier: 1
+      }
+    ]
+  },
+  {
     name: "BESS",
     ip: "192.168.1.253",
     port: 502,
@@ -186,6 +201,7 @@ const devices: DeviceConfig[] = [
 const componentMap: Record<string, { key: string; name: string }> = {
   BESS: { key: "bess", name: "Battery" },
   "BESS-AC": { key: "bess_ac", name: "BESS AC" },
+  "BESS-AUX": { key: "bess_ac", name: "BESS AC" },
 };
 
 // ====================
@@ -354,11 +370,46 @@ async function pollDevice(device: DeviceConfig): Promise<any> {
 async function createPayload() {
   const payloadTimestamp = new Date().toISOString();
   const components: Record<string, any> = {};
+  const bessAcMetrics: Record<string, any> = {};
 
-  for (const device of devices) {
-    const data = await pollDevice(device);
-    if (data) {
-      components[data.key] = { name: data.name, metrics: data.metrics };
+  const mainBessAcDevice = devices.find(d => d.ip === "192.168.1.202");
+  const auxBessAcDevice = devices.find(d => d.ip === "192.168.1.203");
+
+   if (mainBessAcDevice) {
+    const mainBessAc = await pollDevice(mainBessAcDevice);
+    if (mainBessAc?.metrics) {
+      Object.assign(bessAcMetrics, mainBessAc.metrics);
+    }
+  }
+
+  if (auxBessAcDevice) {
+    const auxBessAc = await pollDevice(auxBessAcDevice);
+    if (auxBessAc?.metrics) {
+      Object.assign(bessAcMetrics, auxBessAc.metrics);
+    }
+  }
+
+  if (Object.keys(bessAcMetrics).length > 0) {
+    components["bess_ac"] = {
+      name: "BESS AC",
+      metrics: bessAcMetrics
+    };
+  }
+
+
+  for (const device of devices.filter(d => 
+    !["192.168.1.202", "192.168.1.203"].includes(d.ip)
+  )) {
+    try {
+      const data = await pollDevice(device);
+      if (data?.metrics) {
+        components[data.key] = {
+          name: data.name,
+          metrics: data.metrics
+        };
+      }
+    } catch (error) {
+      console.error(`Failed to poll device ${device.name}:`, error);
     }
   }
 
