@@ -239,6 +239,7 @@ const iotDevice = new iot.device({
   protocol: "mqtts",
   port: 8883,
   reconnectPeriod: 5000,
+  keepalive:60,
 });
 
 // ====================
