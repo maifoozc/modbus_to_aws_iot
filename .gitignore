@@ -1,3 +1,4 @@
 offline_data.db
 
 src/assets/*
+src/assets/offline_data.db
